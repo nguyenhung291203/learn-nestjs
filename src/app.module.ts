@@ -4,7 +4,7 @@ import { AppService } from './app.service'
 import { SharedModule } from './shared/shared.module'
 import { PostModule } from './features/post/post.module'
 import { ConfigModule } from '@nestjs/config'
-
+import './shared/config'
 @Module({
 	imports: [
 		ConfigModule.forRoot({
