@@ -15,6 +15,8 @@ import { UpdatePostDto } from './dto/update-post.dto'
 import { Auth } from 'src/shared/decorators/auth.decorator'
 import { AuthType, ConditionGuard } from 'src/shared/constants/auth.constant'
 import { AuthenticationGuard } from 'src/shared/guards/authentication.guard'
+import { ActiveUser } from 'src/shared/decorators/active-user.decorator'
+import * as jwtType from 'src/shared/types/jwt.type'
 
 @Controller('posts')
 @UseGuards(AuthenticationGuard)
@@ -32,7 +34,9 @@ export class PostController {
 	}
 
 	@Post()
-	createPost(@Body() dto: CreatePostDto) {
+	@Auth([AuthType.Bearer], { condition: ConditionGuard.And })
+	createPost(@Body() dto: CreatePostDto, @ActiveUser() user: jwtType.TokenPayload) {
+		console.log('user', user)
 		return this.postService.createPost(dto)
 	}
 
