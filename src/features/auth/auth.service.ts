@@ -26,11 +26,6 @@ export class AuthService {
 				name: dto.name,
 				password: hashed,
 			},
-			select: {
-				id: true,
-				email: true,
-				name: true,
-			},
 		})
 	}
 }
