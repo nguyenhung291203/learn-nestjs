@@ -103,4 +103,23 @@ export class AuthService {
 			refreshToken: this.tokenService.signRefreshToken(payload),
 		}
 	}
+
+	async logout(refreshToken: string): Promise<void> {
+		const storedToken = await this.prismaService.refreshToken.findUnique({
+			where: { token: refreshToken },
+		})
+
+		if (!storedToken) {
+			throw new UnauthorizedException('Refresh token not found')
+		}
+
+		if (storedToken.revoked) {
+			throw new BadRequestException('Refresh token already revoked')
+		}
+
+		await this.prismaService.refreshToken.update({
+			where: { token: refreshToken },
+			data: { revoked: true },
+		})
+	}
 }
