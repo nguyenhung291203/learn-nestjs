@@ -17,7 +17,7 @@ export type ConditionGuardType = (typeof ConditionGuard)[keyof typeof ConditionG
 
 export type AuthTypeDecoratorPayload = {
 	authTypes: AuthTypeType[]
-	options: {
-		condition: ConditionGuardType
+	options?: {
+		condition?: ConditionGuardType
 	}
 }
