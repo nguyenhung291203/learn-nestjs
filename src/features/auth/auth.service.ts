@@ -66,6 +66,37 @@ export class AuthService {
 		return tokens
 	}
 
+	async refresh(refreshToken: string): Promise<LoginResDto> {
+		const { userId } = this.tokenService.verifyRefreshToken(refreshToken)
+
+		const storedToken = await this.prismaService.refreshToken.findUnique({
+			where: { token: refreshToken },
+		})
+
+		if (!storedToken || storedToken.revoked || storedToken.expiresAt < new Date()) {
+			throw new UnauthorizedException('Refresh token invalid')
+		}
+
+		await this.prismaService.refreshToken.update({
+			where: { token: refreshToken },
+			data: { revoked: true },
+		})
+
+		const tokens = this.generateTokens({ userId: userId })
+
+		const newPayload = this.tokenService.verifyRefreshToken(tokens.refreshToken)
+
+		await this.prismaService.refreshToken.create({
+			data: {
+				token: tokens.refreshToken,
+				userId: userId,
+				expiresAt: new Date(newPayload.exp! * 1000),
+			},
+		})
+
+		return tokens
+	}
+
 	private generateTokens(payload: { userId: number }): LoginResDto {
 		return {
 			accessToken: this.tokenService.signAccessToken(payload),
