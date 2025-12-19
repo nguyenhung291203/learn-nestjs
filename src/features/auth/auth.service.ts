@@ -1,14 +1,23 @@
-import { BadRequestException, Injectable } from '@nestjs/common'
-import { PrismaService } from 'src/shared/prisma/prisma.service'
+import {
+	BadRequestException,
+	Injectable,
+	UnauthorizedException,
+	UnprocessableEntityException,
+} from '@nestjs/common'
+import { PrismaService } from 'src/shared/services/prisma.service'
 import { RegisterDto } from './dto/register.dto'
-import { HashingService } from 'src/shared/hashing/hashing.service'
+import { HashingService } from 'src/shared/services/hashing.service'
+import { LoginReqDto, LoginResDto } from './dto/login.dto'
+import { TokenService } from 'src/shared/services/token.service'
 
 @Injectable()
 export class AuthService {
 	constructor(
 		private readonly prismaService: PrismaService,
 		private readonly hashingService: HashingService,
+		private readonly tokenService: TokenService,
 	) {}
+
 	async register(dto: RegisterDto) {
 		const existed = await this.prismaService.user.findUnique({
 			where: { email: dto.email },
@@ -27,5 +36,40 @@ export class AuthService {
 				password: hashed,
 			},
 		})
+	}
+	async login(req: LoginReqDto): Promise<LoginResDto> {
+		const user = await this.prismaService.user.findUnique({
+			where: { email: req.email },
+		})
+
+		if (!user) {
+			throw new UnauthorizedException('User not exists')
+		}
+		const isPasswordValid = await this.hashingService.compare(req.password, user.password)
+
+		if (!isPasswordValid) {
+			throw new UnprocessableEntityException({
+				field: 'password',
+				message: 'Password is incorrect',
+			})
+		}
+		const tokens = this.generateTokens({ userId: user.id })
+		const payload = this.tokenService.verifyRefreshToken(tokens.refreshToken)
+
+		await this.prismaService.refreshToken.create({
+			data: {
+				token: tokens.refreshToken,
+				userId: user.id,
+				expiresAt: new Date(payload.exp! * 1000),
+			},
+		})
+		return tokens
+	}
+
+	private generateTokens(payload: { userId: number }): LoginResDto {
+		return {
+			accessToken: this.tokenService.signAccessToken(payload),
+			refreshToken: this.tokenService.signRefreshToken(payload),
+		}
 	}
 }

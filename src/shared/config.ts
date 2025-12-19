@@ -1,5 +1,5 @@
-import { plainToInstance } from 'class-transformer'
-import { IsString, validateSync } from 'class-validator'
+import { plainToInstance, Type } from 'class-transformer'
+import { IsNumber, IsString, validateSync } from 'class-validator'
 import { config } from 'dotenv'
 import fs from 'fs'
 import path from 'path'
@@ -14,9 +14,29 @@ if (!fs.existsSync(path.resolve('.env'))) {
 class ConfigSchema {
 	@IsString()
 	DATABASE_URL: string
+
+	@IsString()
+	ACCESS_TOKEN_SECRET: string
+
+	@IsNumber()
+	@Type(() => Number)
+	ACCESS_TOKEN_EXPIRES_IN: number
+
+	@IsString()
+	REFRESH_TOKEN_SECRET: string
+
+	@IsNumber()
+	@Type(() => Number)
+	REFRESH_TOKEN_EXPIRES_IN: number
+
+	@IsString()
+	NODE_ENV: string
+
+	@IsString()
+	PORT: string
 }
 
-const configServer = plainToInstance(ConfigSchema, process.env)
+export const configServer = plainToInstance(ConfigSchema, process.env)
 const e = validateSync(configServer)
 if (e.length > 0) {
 	console.error('error in validating .env file:')

@@ -8,7 +8,7 @@ import { AuthModule } from './features/auth/auth.module'
 import { APP_INTERCEPTOR } from '@nestjs/core'
 const features = [PostModule, AuthModule]
 @Module({
-	imports: [SharedModule, ...features],
+	imports: [...features, SharedModule],
 	controllers: [AppController],
 	providers: [
 		AppService,
